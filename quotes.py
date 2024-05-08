@@ -221,6 +221,38 @@ def post_comment(id=None):
     
     return redirect("/quotes")
 
+@app.route("/delete_comment/<quote_id>/<comment_index>", methods=["POST"])
+def delete_comment(quote_id, comment_index):
+    session_id = session.get("session_id")
+    if not session_id:
+        return redirect("/login")
+    
+    # Get the user from the session
+    user = session.get("user", "unknown user")
+    
+    # Get the quote from the database
+    quotes_collection = quotes_db.quotes_collection
+    quote = quotes_collection.find_one({"_id": ObjectId(quote_id)})
+    if not quote:
+        return "Quote not found", 404
+    
+    # Check if the user is the owner of the comment or the owner of the quote
+    comment_index = int(comment_index)
+    comments = quote.get("comments", [])
+    if comment_index < 0 or comment_index >= len(comments):
+        return "Invalid comment index", 400
+    
+    comment = comments[comment_index]
+    if comment["user"] != user and quote["owner"] != user:
+        return "Unauthorized", 403
+    
+    # Delete the comment
+    del comments[comment_index]
+    
+    # Update the quote document with the modified comments
+    quotes_collection.update_one({"_id": ObjectId(quote_id)}, {"$set": {"comments": comments}})
+    
+    return redirect("/quotes")
 
 
 

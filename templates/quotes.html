@@ -29,7 +29,14 @@
                         {% if item["comments"] %}
                             <ul>
                                 {% for comment in item["comments"] %}
+                                    <div>
                                     <li>{{ comment["user"] }} - {{ comment["comment"] }}</li>
+                                    {% if user == item["owner"]  or user==comment["user"] %}
+                                        <form action="/delete_comment/{{ item['_id'] }}/{{ loop.index0 }}" method="POST">
+                                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                        </form>
+                                    {% endif %}
+                                    </div>
                                 {% endfor %}
                             </ul>
                         {% else %}

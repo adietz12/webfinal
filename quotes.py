@@ -16,25 +16,8 @@ user_db = client.user_db
 
 import uuid
 #comment
+
 @app.route("/", methods=["GET"])
-@app.route("/main_page", methods=["GET"])
-def main_page():
-    # Check if the user is logged in
-    if "user" not in session:
-        # If not logged in, redirect to the login page
-        return redirect("/login")
-    user = session.get("user")
-    # open the quotes collection
-    quotes_collection = quotes_db.quotes_collection
-    # load the data
-    data = list(quotes_collection.find({}))
-    for item in data:
-        item["_id"] = str(item["_id"])
-        item["object"] = ObjectId(item["_id"])
-    # Render the main page template
-    return render_template("main_page.html", quotes=data, user=user)
-
-
 @app.route("/quotes", methods=["GET"])
 def get_quotes():
     session_id = session.get("session_id")
@@ -152,7 +135,7 @@ def post_add():
         # Open the quotes collection
         quotes_collection = quotes_db.quotes_collection
         # Insert the quote
-        quote_data = {"owner": user, "text": text, "author": author, "date": date, "comments":can_comment}
+        quote_data = {"owner": user, "text": text, "author": author, "date": date, "can_comment":can_comment}
         quotes_collection.insert_one(quote_data)
     
     return redirect("/quotes")
@@ -205,3 +188,39 @@ def get_delete(id=None):
         # Delete the item
         quotes_collection.delete_one({"_id": ObjectId(id)})
     return redirect("/quotes")
+
+@app.route("/add_comment/<id>", methods=["POST"])
+def post_comment(id=None):
+    session_id = session.get("session_id")
+    if not session_id:
+        return redirect("/login")
+    
+    # Get the user from the session
+    user = session.get("user", "unknown user")
+    
+    # Get the comment text from the form
+    comment_text = request.form.get("comment", "")
+    
+    if comment_text:
+        # Open the quotes collection
+        quotes_collection = quotes_db.quotes_collection
+        # Find the quote by its ID
+        quote = quotes_collection.find_one({"_id": ObjectId(id)})
+        if quote:
+            # Get the existing comments or create an empty list if not present
+            comments = quote.get("comments", [])
+            # Ensure comments is treated as a list
+            if not isinstance(comments, list):
+                comments = [comments]
+            # Add the new comment
+            new_comment = {"user": user, "comment": comment_text}
+            comments.append(new_comment)
+            quote["comments"] = comments
+            # Update the entire quote document with the modified comments
+            quotes_collection.update_one({"_id": ObjectId(id)}, {"$set": {"comments": comments}})
+    
+    return redirect("/quotes")
+
+
+
+

@@ -4,48 +4,62 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 </head>
 <body>
+    
+    <!-- Container to display search results -->
     <h1>Quotes</h1>
     <hr>
+    <div class="input-group">
+        <form action="/search" method="POST">
+            <div class="mb-3">
+                <input type="text" class="form-control" name="search" placeholder="Search for a user">
+            <div class="input-group-btn">
+            <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+            </div>
+        </form>
+        </div>
     <table>
         {% for item in data %}
-        <div class="d-flex">
-            <div class="card" style="width: 18rem;">
-                <div class="card-body">
-                    <h5 class="card-title">{{ item["owner"] }}</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">{{ item["text"] }}</h6>
-                    <p class="card-text"> - {{ item["author"] }}, {{ item["date"] }}</p>
-                    {% if item["owner"] == user %}
-                        <a href="/edit/{{ item['_id'] }}"><i class="material-icons">mode_edit</i></a>
-                        <a href="/delete/{{ item['_id'] }}"><i class="material-icons">delete</i></a>
-                    {% endif %}
-                    {% if item["can_comment"] %}
-                        <form action="/add_comment/{{ item['_id'] }}" method="POST">
-                            <div class="mb-3">
-                                <input type="text" class="form-control" name="comment" placeholder="Add a comment">
-                            </div>
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                        </form>
-                        <h6>Comments:</h6>
-                        {% if item["comments"] %}
-                            <ul>
-                                {% for comment in item["comments"] %}
-                                    <div>
-                                    <li>{{ comment["user"] }} - {{ comment["comment"] }}</li>
-                                    {% if user == item["owner"]  or user==comment["user"] %}
-                                        <form action="/delete_comment/{{ item['_id'] }}/{{ loop.index0 }}" method="POST">
-                                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                                        </form>
-                                    {% endif %}
-                                    </div>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p>No comments yet.</p>
+            {% if not item["private"] or item["owner"] == user %}
+            <div class="d-flex row-cols-2">
+                <div class="card " style="width: 18rem;">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item["owner"] }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ item["text"] }}</h6>
+                        <p class="card-text"> - {{ item["author"] }}, {{ item["date"] }}</p>
+                        {% if item["owner"] == user %}
+                            <a href="/edit/{{ item['_id'] }}"><i class="material-icons">mode_edit</i></a>
+                            <a href="/delete/{{ item['_id'] }}"><i class="material-icons">delete</i></a>
                         {% endif %}
-                    {% endif %}
+                        {% if item["can_comment"] %}
+                            <form action="/add_comment/{{ item['_id'] }}" method="POST">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" name="comment" placeholder="Add a comment">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </form>
+                            <h6>Comments:</h6>
+                            {% if item["comments"] %}
+                                <ul>
+                                    {% for comment in item["comments"] %}
+                                        <div>
+                                            <li>{{ comment["user"] }} - {{ comment["comment"] }}</li>
+                                            {% if user == item["owner"] or user == comment["user"] %}
+                                                <form action="/delete_comment/{{ item['_id'] }}/{{ loop.index0 }}" method="POST">
+                                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p>No comments yet.</p>
+                            {% endif %}
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
         {% endfor %}
     </table>
     <hr/>

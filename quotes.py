@@ -89,6 +89,9 @@ def post_register():
 
     hashed_password, salt = hash_password(password)
 
+    if not user.strip() or password.strip():  # Check if search user or password is empty or only contains whitespace
+        return redirect("/quotes")
+
     user_collection=user_db.user_collection
     user_data = {"username":user, "password":hashed_password, "salt":salt}
     user_collection.insert_one(user_data)
@@ -130,12 +133,14 @@ def post_add():
     author = request.form.get("author", "")
     date = request.form.get("date", "")
     can_comment = request.form.get("cancomment", False)
+    private = request.form.get("private", False)
+
     # Check if all required fields are provided
     if text != "" and author != "" and date != "":
         # Open the quotes collection
         quotes_collection = quotes_db.quotes_collection
         # Insert the quote
-        quote_data = {"owner": user, "text": text, "author": author, "date": date, "can_comment":can_comment}
+        quote_data = {"owner": user, "text": text, "author": author, "date": date, "can_comment":can_comment, "private":private}
         quotes_collection.insert_one(quote_data)
     
     return redirect("/quotes")
@@ -254,5 +259,29 @@ def delete_comment(quote_id, comment_index):
     
     return redirect("/quotes")
 
-
-
+@app.route("/search", methods=["POST"])
+def search():
+    session_id = session.get("session_id")
+    user = session.get("user")
+    print(user)
+    if not session_id:
+        return redirect("/login")
+    
+    search = request.form.get("search", "")
+    if not search.strip():  # Check if search query is empty or only contains whitespace
+        return redirect("/quotes")
+    quotes_collection = quotes_db.quotes_collection
+    # load the data
+    print(search)
+    data = list(quotes_collection.find({"owner":search}))
+    print(data)
+    for item in data:
+        item["_id"] = str(item["_id"])
+        item["object"] = ObjectId(item["_id"])
+    # display the data
+    html = render_template(
+        "quotes.html",
+        data=data,
+        user=user,
+    )
+    return make_response(html)

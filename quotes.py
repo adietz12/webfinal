@@ -89,8 +89,6 @@ def post_register():
 
     hashed_password, salt = hash_password(password)
 
-    if not user.strip() or password.strip():  # Check if search user or password is empty or only contains whitespace
-        return redirect("/quotes")
 
     user_collection=user_db.user_collection
     user_data = {"username":user, "password":hashed_password, "salt":salt}
